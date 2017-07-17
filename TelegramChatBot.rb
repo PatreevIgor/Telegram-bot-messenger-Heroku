@@ -32,8 +32,10 @@ class TelegramChatBot
   def response_bot_to_user(bot,message)
     response_text = "Just had a mention of you in the group: #{message.chat.title} \n
                      The content of the message: #{message.text}"
-    MASSIVE_MATCH_TEXT.each do |text_val|
-      bot.api.send_message(chat_id: USER_ID, text: response_text) if message.text.include?(text_val)
+    if message
+      MASSIVE_MATCH_TEXT.each do |text_val|
+        bot.api.send_message(chat_id: USER_ID, text: response_text) if message.text.include?(text_val)
+      end
     end
   end
 
