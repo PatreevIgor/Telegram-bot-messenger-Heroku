@@ -24,7 +24,9 @@ class TelegramChatBot
   end
 
   def bot_responses(bot, message)
-    response_bot_to_user(bot, message)
+    if message.text
+      response_bot_to_user(bot, message)
+    end
     response_bot_on_find_match_laugh(bot, message)
     response_to_default_requests(bot,message)
   end
@@ -32,7 +34,7 @@ class TelegramChatBot
   def response_bot_to_user(bot,message)
     response_text = "Just had a mention of you in the group: #{message.chat.title} \n
                      The content of the message: #{message.text}"
-    if message
+    unless message.text.nil?
       MASSIVE_MATCH_TEXT.each do |text_val|
         bot.api.send_message(chat_id: USER_ID, text: response_text) if message.text.include?(text_val)
       end
@@ -40,7 +42,9 @@ class TelegramChatBot
   end
 
   def response_bot_on_find_match_laugh(bot, message)
-    bot.api.send_message(chat_id: message.chat.id, text: ":)") if message.text.include?(MATCH_LAUGHT)
+    unless message.text.nil?
+      bot.api.send_message(chat_id: message.chat.id, text: ":)") if message.text.include?(MATCH_LAUGHT)
+    end
   end
 
   def response_to_default_requests(bot, message)
