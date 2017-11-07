@@ -1,19 +1,24 @@
 require 'telegram/bot'
 require 'dotenv'
 require 'i18n'
+require 'net/http'
+require 'uri'
+require 'json'
+require 'dotenv'
+
 Dotenv.load
 I18n.load_path = Dir['*.yml']
 I18n.default_locale = :ru
 
 class TelegramChatBot
   USER_ID = ENV['HIDE_USER_ID']
-  MATCH_LAUGHT = I18n.translate(:laught).freeze
-  MASSIVE_MATCH_TEXT = I18n.translate(:val_for_massive_match_text).freeze
 
-  def listen_chat
+  def run
     telegram_bot_client do |bot|
-      bot.listen do |message|
-        bot_responses(bot, message)
+      loop do
+        sleep(30)
+        inform_about_sales
+        time_trade_control
       end
     end
   end
@@ -21,30 +26,6 @@ class TelegramChatBot
   private
   def telegram_bot_client(&block)
      Telegram::Bot::Client.run(ENV['HIDE_TOKEN'], &block)
-  end
-
-  def bot_responses(bot, message)
-    if message.text
-      response_bot_to_user(bot, message)
-    end
-    response_bot_on_find_match_laugh(bot, message)
-    response_to_default_requests(bot,message)
-  end
-
-  def response_bot_to_user(bot,message)
-    response_text = "Just had a mention of you in the group: #{message.chat.title} \n
-                     The content of the message: #{message.text}"
-    unless message.text.nil?
-      MASSIVE_MATCH_TEXT.each do |text_val|
-        bot.api.send_message(chat_id: USER_ID, text: response_text) if message.text.include?(text_val)
-      end
-    end
-  end
-
-  def response_bot_on_find_match_laugh(bot, message)
-    unless message.text.nil?
-      bot.api.send_message(chat_id: message.chat.id, text: ":)") if message.text.include?(MATCH_LAUGHT)
-    end
   end
 
   def response_to_default_requests(bot, message)
@@ -63,6 +44,56 @@ class TelegramChatBot
                                                             /show_my_id\n ")
     end
   end
+
+  def inform_about_sales
+    if get_items_to_give["success"] == true
+      telegram_bot_client do |bot|
+        bot.api.send_message(chat_id: USER_ID, text: "Item sold!")
+      end
+    end
+  end
+
+  def get_items_to_give
+    url = "https://market.dota2.net/api/GetItemsToGive/?key=#{ENV['SECRET_KEY']}"
+    uri = URI.parse(url)
+    response = Net::HTTP.get_response(uri)
+    my_hash = JSON.parse(response.body)
+  end  
+
+  def time_trade_control
+    if check_status == false and Time.now.utc.hour < 21 and Time.now.utc.hour >= 3
+      #puts "Использование trade_on" 
+      trade_on
+    elsif check_status == true and Time.now.utc.hour >= 21
+      #puts "Использование trade_off" 
+      trade_off
+    else
+      #puts "Торговля продолжается" 
+    end
+  end
+
+  def check_status
+    url = "https://market.dota2.net/api/Test/?key=#{ENV['SECRET_KEY']}"
+    uri = URI.parse(url)
+    response = Net::HTTP.get_response(uri)
+    my_hash = JSON.parse(response.body)
+    my_hash["status"]["site_online"]
+  end
+
+  def trade_on
+    url = "https://market.dota2.net/api/PingPong/?key=#{ENV['SECRET_KEY']}"
+    uri = URI.parse(url)
+    response = Net::HTTP.get_response(uri)
+    my_hash = JSON.parse(response.body)
+  end
+
+  def trade_off
+    url = "https://market.dota2.net/api/GoOffline/?key=#{ENV['SECRET_KEY']}"
+    uri = URI.parse(url)
+    response = Net::HTTP.get_response(uri)
+    my_hash = JSON.parse(response.body)
+  end
+
 end
 
-TelegramChatBot.new.listen_chat
+TelegramChatBot.new.run
