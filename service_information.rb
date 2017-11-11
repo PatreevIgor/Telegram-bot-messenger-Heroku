@@ -1,11 +1,31 @@
 module Information
+  Dotenv.load
   USER_ID = ENV['HIDE_USER_ID']
-  items_ids = []
+  @@items_ids = []
 
   def inform_about_sales
-    if get_items_to_give["success"] == true and validation_send == true
-      send_message if get_items_to_give["success"] == true
+    if get_items_to_give["success"]
+      send_message if validation
     end
+    delete_old_items_from_items_ids
+  end
+
+  private
+  def get_items_to_give
+    url = "https://market.dota2.net/api/GetItemsToGive/?key=#{ENV['SECRET_KEY']}"
+    uri = URI.parse(url)
+    response = Net::HTTP.get_response(uri)
+    my_hash = JSON.parse(response.body)
+    # {"success"=>true, "offers"=>[{"ui_id"=>"95899249",                     "i_name"=>"Searing Dominator",
+    #                               "i_market_name"=>"Searing Dominator",         "i_name_color"=>"D2D2D2",
+    #                               "i_rarity"=>"Immortal", "i_descriptions"=>nil,        "ui_status"=>"2",
+    #                               "he_name"=>"Huskar", "ui_price"=>27.47,       "i_classid"=>"949841616",
+    #                               "i_instanceid"=>"230145964",             "ui_real_instance"=>"unknown",
+    #                               "i_quality"=>"Standard",     "i_market_hash_name"=>"Searing Dominator",
+    #                               "i_market_price"=>45.12,  "position"=>1, "min_price"=>0, "ui_bid"=>"0",
+    #                               "ui_asset"=>"0", "type"=>"2",  "ui_price_text"=>"27.47<small></small>",
+    #                               "min_price_text"=>false, "i_market_price_text"=>"45.12<small></small>",
+    #                               "left"=>2903, "placed"=>"12 минут назад"}]}
   end
 
   def send_message
@@ -14,32 +34,34 @@ module Information
     end
   end
 
-  def get_items_to_give
-    url = "https://market.dota2.net/api/GetItemsToGive/?key=#{ENV['SECRET_KEY']}"
-    uri = URI.parse(url)
-    response = Net::HTTP.get_response(uri)
-    my_hash = JSON.parse(response.body)
+  def validation
+    if @@items_ids.include?(mass_current_ids.first)
+      false
+    else
+      add_new_item_ids
+      true
+    end
   end
 
-  private
-  def validation_send
+  def add_new_item_ids
     sold_items.each do |item|
-      if items_ids.include?(item["ui_id"])
-        false
-      else
-        items_ids << item["ui_id"]
-        true
-      end
+      @@items_ids << item["ui_id"] unless @@items_ids.include?(item["ui_id"])
     end
-    delete_old_ui_ids
+  end
+
+  def mass_current_ids
+    m = []
+    sold_items.each do |item|
+      m << item["ui_id"]
+    end
+    m
   end
 
   def sold_items
     get_items_to_give["offers"]
   end
 
-  def delete_old_ui_ids
-    items_ids.рор if items_ids.size >= 20
+  def delete_old_items_from_items_ids
+    @@items_ids.рор if @@items_ids.size >= 20
   end
 end
-
