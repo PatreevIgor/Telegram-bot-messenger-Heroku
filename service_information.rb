@@ -35,17 +35,18 @@ module Information
   end
 
   def validation
-    if @@items_ids.include?(mass_current_ids.first)
+    if @@items_ids[-1] == mass_current_ids.first
       false
     else
-      add_new_item_ids
+      add_new_item_id
       true
     end
   end
-
-  def add_new_item_ids
+  
+  def add_new_item_id
     sold_items.each do |item|
-      @@items_ids << item["ui_id"] unless @@items_ids.include?(item["ui_id"])
+      @@items_ids << item["ui_id"]
+      break
     end
   end
 
@@ -62,6 +63,6 @@ module Information
   end
 
   def delete_old_items_from_items_ids
-    @@items_ids.рор if @@items_ids.size >= 20
+    @@items_ids.shift if @@items_ids.size >= 5
   end
 end
