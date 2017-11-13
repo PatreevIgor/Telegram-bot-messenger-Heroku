@@ -20,6 +20,7 @@ class TelegramChatBot
         sleep(5)
         inform_about_sales
         time_trade_control
+        notify_birthday
       end
     end
   end
