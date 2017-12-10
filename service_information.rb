@@ -1,6 +1,8 @@
 module Information
   Dotenv.load
   USER_ID = ENV['HIDE_USER_ID']
+  TELEGRAMM_TEXT_MESSAGE = 'Item sold!'.freeze
+  GET_ITEMS_TO_GIVE_URL = "https://market.dota2.net/api/GetItemsToGive/?key=#{ENV['SECRET_KEY']}"
   @@items_ids = []
 
   def inform_about_sales
@@ -12,8 +14,7 @@ module Information
 
   private
   def get_items_to_give
-    url = "https://market.dota2.net/api/GetItemsToGive/?key=#{ENV['SECRET_KEY']}"
-    uri = URI.parse(url)
+    uri = URI.parse(GET_ITEMS_TO_GIVE_URL)
     response = Net::HTTP.get_response(uri)
     my_hash = JSON.parse(response.body)
     # {"success"=>true, "offers"=>[{"ui_id"=>"95899249",                     "i_name"=>"Searing Dominator",
@@ -30,7 +31,7 @@ module Information
 
   def send_message
     telegram_bot_client do |bot|
-      bot.api.send_message(chat_id: USER_ID, text: "Item sold!")
+      bot.api.send_message(chat_id: USER_ID, text: TELEGRAMM_TEXT_MESSAGE)
     end
   end
 
