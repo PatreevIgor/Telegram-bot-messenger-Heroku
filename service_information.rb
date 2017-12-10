@@ -1,22 +1,33 @@
 module Information
   Dotenv.load
-  USER_ID = ENV['HIDE_USER_ID']
-  TELEGRAMM_TEXT_MESSAGE = 'Item sold!'.freeze
-  GET_ITEMS_TO_GIVE_URL = "https://market.dota2.net/api/GetItemsToGive/?key=#{ENV['SECRET_KEY']}"
-  @@items_ids = []
+  ITEMS_TO_GIVE_URL       = "https://market.dota2.net/api/GetItemsToGive/?key=#{ENV['SECRET_KEY']}"
+  MARKET_TRADES_URL       = "https://market.dota2.net/api/MarketTrades/?key=#{ENV['SECRET_KEY']}"
+  TEXT_MESSAGE_ITEM_SOLD  = 'Item sold!'.freeze
+  TEXT_MESSAGE_BUY_ORDERS = 'Item purchased!'.freeze
+  USER_ID                 = ENV['HIDE_USER_ID']
+  @@ids_sell_items        = []
+  @@ids_bought_items      = []
 
   def inform_about_sales
     if get_items_to_give["success"]
-      send_message if validation
+      send_message_item_sold if validation_for_sale_items
     end
     delete_old_items_from_items_ids
   end
 
+  def information_about_buy_orders
+    if market_trades["success"]
+      send_message_buy_orders if validation_for_bought_items
+    end
+    delete_old_items_from_ids_bought_items
+  end
+
   private
+  # --------------- inform_about_sales methods ---------------------
   def get_items_to_give
-    uri = URI.parse(GET_ITEMS_TO_GIVE_URL)
+    uri      = URI.parse(ITEMS_TO_GIVE_URL)
     response = Net::HTTP.get_response(uri)
-    my_hash = JSON.parse(response.body)
+    my_hash  = JSON.parse(response.body)
     # {"success"=>true, "offers"=>[{"ui_id"=>"95899249",                     "i_name"=>"Searing Dominator",
     #                               "i_market_name"=>"Searing Dominator",         "i_name_color"=>"D2D2D2",
     #                               "i_rarity"=>"Immortal", "i_descriptions"=>nil,        "ui_status"=>"2",
@@ -29,29 +40,29 @@ module Information
     #                               "left"=>2903, "placed"=>"12 минут назад"}]}
   end
 
-  def send_message
+  def send_message_item_sold
     telegram_bot_client do |bot|
-      bot.api.send_message(chat_id: USER_ID, text: TELEGRAMM_TEXT_MESSAGE)
+      bot.api.send_message(chat_id: USER_ID, text: TEXT_MESSAGE_ITEM_SOLD)
     end
   end
 
-  def validation
-    if @@items_ids[-1] == mass_current_ids.first
+  def validation_for_sale_items
+    if @@ids_sell_items[-1] == mass_current_sell_ids.first
       false
     else
-      add_new_item_id
+      add_new_sell_item_id
       true
     end
   end
   
-  def add_new_item_id
+  def add_new_sell_item_id
     sold_items.each do |item|
-      @@items_ids << item["ui_id"]
+      @@ids_sell_items << item["ui_id"]
       break
     end
   end
 
-  def mass_current_ids
+  def mass_current_sell_ids
     m = []
     sold_items.each do |item|
       m << item["ui_id"]
@@ -63,7 +74,54 @@ module Information
     get_items_to_give["offers"]
   end
 
-  def delete_old_items_from_items_ids
-    @@items_ids.shift if @@items_ids.size >= 5
+  def delete_old_items_from_ids_sell_items
+    @@ids_sell_items.shift if @@ids_sell_items.size >= 5
+  end
+
+#-------------information_about_buy_orders------------------
+
+  def market_trades
+    uri      = URI.parse(MARKET_TRADES_URL)
+    response = Net::HTTP.get_response(uri)
+
+    my_hash  = JSON.parse(response.body)
+  end
+
+  def send_message_buy_orders
+    telegram_bot_client do |bot|
+      bot.api.send_message(chat_id: USER_ID, text: TEXT_MESSAGE_BUY_ORDERS)
+    end
+  end
+
+  def validation_for_bought_items
+    if @@ids_bought_items[-1] == mass_current_bought_ids.first
+      false
+    else
+      add_new_bought_item_id
+      true
+    end
+  end
+
+  def add_new_bought_item_id
+    bought_items.each do |item|
+      @@ids_bought_items << item["trade_id"]
+      break
+    end
+  end
+
+  def mass_current_bought_ids
+    m = []
+    bought_items.each do |item|
+      m << item["trade_id"]
+    end
+    m
+  end
+
+  def bought_items
+    market_trades["trades"]
+  end
+
+  def delete_old_items_from_ids_bought_items
+    @@ids_bought_items.shift if @@ids_bought_items.size >= 5
   end
 end
