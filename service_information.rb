@@ -12,7 +12,7 @@ module Information
     if get_items_to_give["success"]
       send_message_item_sold if validation_for_sale_items
     end
-    delete_old_items_from_items_ids
+    delete_old_items_from_ids_sell_items
   end
 
   def information_about_buy_orders
