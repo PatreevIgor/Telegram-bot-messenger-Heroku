@@ -19,7 +19,6 @@ class TelegramChatBot
       loop do
         sleep(5)
         inform_about_sales
-        information_about_buy_orders
         time_trade_control
         notify_birthday
       end
