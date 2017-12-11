@@ -1,10 +1,9 @@
-module Information
+module Information_about_sales
   Dotenv.load
   ITEMS_TO_GIVE_URL       = "https://market.dota2.net/api/GetItemsToGive/?key=#{ENV['SECRET_KEY']}"
   TEXT_MESSAGE_ITEM_SOLD  = 'Item sold!'.freeze
   USER_ID                 = ENV['HIDE_USER_ID']
   @@ids_sell_items        = []
-  @@ids_bought_items      = []
 
   def inform_about_sales
     if get_items_to_give["success"]

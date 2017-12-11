@@ -5,13 +5,15 @@ require 'uri'
 require 'json'
 require 'dotenv'
 require './service_control_time_trading'
-require './service_information'
+require './service_information_about_orders'
+require './service_information_about_sales'
 require './service_organizer'
 Dotenv.load
 
 class TelegramChatBot
   include Control_time_trading
-  include Information
+  include Information_about_sales
+  include Information_about_orders
   include Organizer
 
   def run
@@ -19,6 +21,7 @@ class TelegramChatBot
       loop do
         sleep(5)
         inform_about_sales
+        inform_about_orders
         time_trade_control
         notify_birthday
       end
