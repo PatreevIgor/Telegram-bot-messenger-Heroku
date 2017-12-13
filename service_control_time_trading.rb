@@ -1,4 +1,6 @@
 module Control_time_trading
+  DELETE_OLD_ORDERS_URL = "https://market.dota2.net/api/DeleteOrders/?key=#{ENV['SECRET_KEY']}".freeze
+
   def time_trade_control
     if check_status == false and Time.now.utc.hour < 21 and Time.now.utc.hour >= 3
       #puts "Use to trade_on" 
@@ -6,6 +8,7 @@ module Control_time_trading
     elsif check_status == true and Time.now.utc.hour >= 21
       #puts "Use to trade_off" 
       trade_off
+      delete_old_orders
     else
       #puts "Trading continue" 
     end
@@ -28,6 +31,13 @@ module Control_time_trading
 
   def trade_off
     url = "https://market.dota2.net/api/GoOffline/?key=#{ENV['SECRET_KEY']}"
+    uri = URI.parse(url)
+    response = Net::HTTP.get_response(uri)
+    my_hash = JSON.parse(response.body)
+  end
+
+  def delete_old_orders
+    url = DELETE_OLD_ORDERS_URL
     uri = URI.parse(url)
     response = Net::HTTP.get_response(uri)
     my_hash = JSON.parse(response.body)
