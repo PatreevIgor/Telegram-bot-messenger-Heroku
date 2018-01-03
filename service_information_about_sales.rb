@@ -6,7 +6,7 @@ module Information_about_sales
   @@ids_sell_items        = []
 
   def inform_about_sales
-    if get_items_to_give["success"]
+    if get_items_to_give['success']
       send_message_item_sold if validation_for_sale_items
     end
     delete_old_items_from_ids_sell_items
